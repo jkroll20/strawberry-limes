@@ -1,0 +1,6 @@
+AuthType Basic
+AuthName "Limeskarte Updatefunktion"
+AuthBasicProvider file
+AuthUserFile /data/project/projectname/passwdfile
+require user username
+

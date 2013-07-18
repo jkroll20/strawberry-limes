@@ -1,0 +1,6 @@
+{ 
+    "dataDir": "/data/project/render-tests/erdbeer/data",
+    "sqlDbName": "rendertests",
+    "sqlTableName": "limes",
+    "sqlDefaultFile": "~/.my.cnf"
+}
