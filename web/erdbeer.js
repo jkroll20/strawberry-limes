@@ -18,34 +18,9 @@
 
 var map, selectControl;
 var POILayers= new Array();
-//~ , verifiedPOIlayer, unverifiedPOIlayer, nonexistingPOIlayer, selectControl;
 var baseUrl= getConfig('POIBase', "../db/pois.py");
 var initialPOIsLoaded= false;
 var selectFeature;
-
-/*
-var config;
-
-function dirname(path) {
-    return path.replace(/\\/g,'/').replace(/\/[^\/]*$/, '');;
-}
-
-function configCallback(data) {
-    config= data;
-    window.alert(data);
-}
-
-var script;
-function loadConfig(url) {
-    script= document.createElement('script');
-    script.type= 'text/javascript';
-    script.src= url + '?callback=configCallback';
-    document.head.appendChild(script);
-    console.log('loadConfig src: ' + url);
-}
-
-loadConfig(dirname(window.location.href) + '/erdbeer.conf');
-*/
 
 /**
 * Parse hash bang parameters from a URL as key value object.
@@ -85,18 +60,10 @@ function findStringInPOItitles(str) {
 	var features= [];
     for(var i= 0; i<POILayers.length; i++)
         if(POILayers[i].visibility) features.concat(POILayers[i].features);
-	//~ if(verifiedPOIlayer.visibility) features= verifiedPOIlayer.features;
-	//~ if(unverifiedPOIlayer.visibility) features= features.concat(unverifiedPOIlayer.features);
-	//~ if(nonexistingPOIlayer.visibility) features= features.concat(nonexistingPOIlayer.features);
 	var result= [];
 	for(var i= 0; i<features.length; i++) {
 		if(features[i].attributes['title'].toLowerCase().search(str.toLowerCase())!=-1) {
 			result.push(features[i]);
-			//~ var s= String();
-			//~ for (var k in features[i].attributes) {
-				//~ s+= k + ": " + features[i].attributes[k] + "\n";
-			//~ }
-			//~ console.log(s);
 		}
 	}
 	return result;
@@ -163,28 +130,6 @@ function setPOILayerYear(year) {
         POILayers[i].refresh({force:true});
         POILayers[i].redraw();
     }
-/*
-	verifiedPOIlayer.protocol= new OpenLayers.Protocol.HTTP({
-			url: baseUrl + '?ranges=verified&year=' + year,
-			format: new OpenLayers.Format.Text()
-		});
-	verifiedPOIlayer.refresh({force:true});
-	verifiedPOIlayer.redraw();
-	
-	unverifiedPOIlayer.protocol= new OpenLayers.Protocol.HTTP({
-			url: baseUrl + '?ranges=unverified&year=' + year,
-			format: new OpenLayers.Format.Text()
-		});
-	unverifiedPOIlayer.refresh({force:true});
-	unverifiedPOIlayer.redraw();
-	
-	nonexistingPOIlayer.protocol= new OpenLayers.Protocol.HTTP({
-			url: baseUrl + '?ranges=inverse&year=' + year,
-			format: new OpenLayers.Format.Text()
-		});
-	nonexistingPOIlayer.refresh({force:true});
-	nonexistingPOIlayer.redraw();
-*/
 	
 	if(document.getElementById("year-display")) document.getElementById("year-display").innerHTML= year; 
 	timerCurrYear= year;
@@ -264,11 +209,6 @@ function init(){
 	map.addLayer(wms);
 */
 
-	//~ verifiedPOIlayer= createPOILayer("<img src='../img/icon-turm-haekchen.png' style='margin: 4px;' align='right'> Befestigungsanlagen (Daten gesichert)");
-	//~ unverifiedPOIlayer= createPOILayer("<img src='../img/icon-turm-transp.png' style='margin: 4px;' align='right'> Befestigungsanlagen (ungesichert/gesch&auml;tzt)");
-	//~ nonexistingPOIlayer= createPOILayer("<img src='../img/icon-turm-kreuz.png' style='margin: 4px;' align='right'> Befestigungsanlagen (in diesem Jahr nicht existierend)");
-	//~ nonexistingPOIlayer.setVisibility(false);
-    
     var layerConfig= getConfig('POILayers', '');
 	for(var i= 0; i<layerConfig.length; i++) {
         var layer= createPOILayer(layerConfig[i].title);
@@ -420,9 +360,6 @@ function timerStartReverse() {
 }
 
 function timerChangeSpeed(relSpeed) {
-	//~ var v= Math.abs(timerStep)+relSpeed;
-	//~ if(timerStep<0) v= -v;
-	//timerStart(timerStep+relSpeed, timerInterval);
 	timerStep+= relSpeed;
 	if(timerID) timerStart(timerStep, timerInterval);
 	else updateSpeedDisplay();
@@ -430,12 +367,6 @@ function timerChangeSpeed(relSpeed) {
 
 function zoomToFeature(featureID) {
 	console.log("zoomToFeature('%s')", featureID);
-/*
-	var feature= verifiedPOIlayer.getFeatureById(featureID);
-	if(feature==null) feature= unverifiedPOIlayer.getFeatureById(featureID);
-	if(feature==null) feature= nonexistingPOIlayer.getFeatureById(featureID);
-	if(feature==null) return;
-*/
     var feature= null;
     for(var i= 0; i<POILayers.length && feature==null; i++)
         feature= POILayers[i].getFeatureById(featureID);
