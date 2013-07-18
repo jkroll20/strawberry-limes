@@ -151,21 +151,21 @@ function createPOILayer(title) {
 
 function setPOILayerYear(year) {
 	verifiedPOIlayer.protocol= new OpenLayers.Protocol.HTTP({
-			url: baseUrl + '?verification=verified&year=' + year,
+			url: baseUrl + '?ranges=verified&year=' + year,
 			format: new OpenLayers.Format.Text()
 		});
 	verifiedPOIlayer.refresh({force:true});
 	verifiedPOIlayer.redraw();
 	
 	unverifiedPOIlayer.protocol= new OpenLayers.Protocol.HTTP({
-			url: baseUrl + '?verification=unverified&year=' + year,
+			url: baseUrl + '?ranges=unverified&year=' + year,
 			format: new OpenLayers.Format.Text()
 		});
 	unverifiedPOIlayer.refresh({force:true});
 	unverifiedPOIlayer.redraw();
 	
 	nonexistingPOIlayer.protocol= new OpenLayers.Protocol.HTTP({
-			url: baseUrl + '?verification=inverse&year=' + year,
+			url: baseUrl + '?ranges=inverse&year=' + year,
 			format: new OpenLayers.Format.Text()
 		});
 	nonexistingPOIlayer.refresh({force:true});

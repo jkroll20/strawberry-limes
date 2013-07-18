@@ -1,6 +1,20 @@
 { 
-    "dataDir": "/data/project/render-tests/erdbeer/data",
+    "dataDir": "/data/project/render-tests/erdbeer",
     "sqlDbName": "rendertests",
     "sqlTableName": "limes",
-    "sqlDefaultFile": "~/.my.cnf"
+    "sqlDefaultFile": "~/.my.cnf",
+    "timeRanges": {
+        "verified": {
+            "ranges": [ [ "beginnsicher", "endemoeglich" ] ],
+            "icon": "../img/icon-turm-haekchen.png"
+        },
+        "unverified": {
+            "ranges": [ [ "beginnmoeglich", "beginnsicher" ], [ "endemoeglich", "endesicher" ]  ],
+            "icon": "../img/icon-turm-transp.png"
+        },
+        "inverse": {
+            "ranges": [ [ -10000, "beginnmoeglich" ], [ "endesicher", 10000 ]  ],
+            "icon": "../img/icon-turm-kreuz.png"
+        }
+    }
 }

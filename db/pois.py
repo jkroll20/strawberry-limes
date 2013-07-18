@@ -52,7 +52,8 @@ def logToDB(timestamp, *args):
         if logCursor is None: logCursor= createLogCursor()
         logCursor.execute('INSERT INTO logs VALUES (?, ?)', (timestamp, unicode(str(*args).decode('utf-8'))))
     except sqlite3.OperationalError:
-        pass
+        #~ pass
+        raise
 
 debuglevel= 1
 ## debug print. everything is logged to sqlite file DATADIR/log.db.
@@ -99,6 +100,8 @@ def getParam(params, name, default= None):
 
 
 def generator_app(environ, start_response):
+    dprint('REQUEST')
+    
     start_response('200 OK', [('Content-Type', 'text/plain; charset=utf-8')])
     
     conn, cursor= getDbCursor()
@@ -118,26 +121,24 @@ def generator_app(environ, start_response):
     params= parseCGIargs(environ)
     year= getParam(params, 'year', 200)
     bbox= getParam(params, 'bbox', '-1000,-1000,1000,1000').split(',')
-    veri= getParam(params, 'verification', 'verified,unverified').split(',')
+    ranges= getParam(params, 'ranges', 'verified,unverified').split(',')
     
-    selectbase= "SELECT lat,lon, lemma, kastelltyp, zeitraumtext, provinz, limesabschnitt, projekt FROM limes WHERE " #lat >= %s AND lat <= %s AND "
-
-    # verified: things which definately existed that year
-    if 'verified' in veri:
-        cursor.execute(selectbase + "beginnsicher != -10000 AND beginnsicher <= %s AND endemoeglich != -10000 AND endemoeglich > %s", (year, year))
-        rowsVerified= cursor.fetchall()
+    #~ # verified: things which definately existed that year
+    #~ if 'verified' in veri:
+        #~ cursor.execute(selectbase + "beginnsicher != -10000 AND beginnsicher <= %s AND endemoeglich != -10000 AND endemoeglich > %s", (year, year))
+        #~ rowsVerified= cursor.fetchall()
     
-    # unverified: things which possibly existed that year
-    if 'unverified' in veri:
-        cursor.execute(selectbase + "beginnmoeglich <= %s AND beginnsicher > %s", (year, year))
-        rowsUnverifiedBegin= cursor.fetchall()
-        cursor.execute(selectbase + "endemoeglich <= %s AND endesicher > %s",  (year, year))
-        rowsUnverifiedEnd= cursor.fetchall()
+    #~ # unverified: things which possibly existed that year
+    #~ if 'unverified' in veri:
+        #~ cursor.execute(selectbase + "beginnmoeglich <= %s AND beginnsicher > %s", (year, year))
+        #~ rowsUnverifiedBegin= cursor.fetchall()
+        #~ cursor.execute(selectbase + "endemoeglich <= %s AND endesicher > %s",  (year, year))
+        #~ rowsUnverifiedEnd= cursor.fetchall()
 
-    # inverse: things which definately did not exist that year
-    if 'inverse' in veri:
-        cursor.execute(selectbase + "beginnmoeglich > %s OR endesicher < %s", (year, year))
-        rowsInverse= cursor.fetchall()
+    #~ # inverse: things which definately did not exist that year
+    #~ if 'inverse' in veri:
+        #~ cursor.execute(selectbase + "beginnmoeglich > %s OR endesicher < %s", (year, year))
+        #~ rowsInverse= cursor.fetchall()
 
     iconVerified= getConfig('iconVerified', '../img/icon-turm-haekchen.png')
     iconUnverified= getConfig('iconUnverified', '../img/icon-turm-transp.png')
@@ -152,20 +153,56 @@ Geo %(lat)s, %(lon)s<br>%(kastelltyp)s<br>Provinz %(provinz)s<br>%(limesabschnit
         '16,16', #~ getConfig("iconSize"...
         '-8,-8' ] ))
 
-    yield('point	title	description	iconSize	iconOffset	icon	foo\n')
-
-    if 'unverified' in veri:
-        for rows in (rowsUnverifiedBegin, rowsUnverifiedEnd):
-            for row in rows:
-                yield( str(poilinebase + '\t%s\tbar\n' % iconUnverified) % row )
+    yield('point	title	description	iconSize	iconOffset	icon\n')
     
-    if 'verified' in veri:
-        for row in rowsVerified:
-            yield( str(poilinebase + '\t%s\tbar\n' % iconVerified) % row )
+    selectbase= "SELECT lat,lon, lemma, kastelltyp, zeitraumtext, provinz, limesabschnitt, projekt FROM limes WHERE\n\t " #lat >= %s AND lat <= %s AND "
+    timeRanges= getConfig('timeRanges', {
+        "verified":     [ [ "beginnsicher", "endemoeglich" ] ],
+        "unverified":   [ [ "beginnmoeglich", "beginnsicher" ], [ "endemoeglich", "endesicher" ]  ],
+        "inverse":      [ [ -10000, "beginnmoeglich" ], [ "endesicher", 10000 ]  ]
+    })
+    invalidFieldVal= -10000
+    for rangestring in ranges:
+        rangesel= []
+        params= []
+        for subrange in timeRanges[rangestring]['ranges']:
+            subsel= []
+            for i in range(len(subrange)):
+                val= subrange[i]
+                selstr= ''
+                if not isinstance(val, (int, long)):
+                    selstr= "%%s != '%d' AND " % invalidFieldVal
+                    params.append(str(val))
+                selstr+= "%%s %s %s" % ('>=' if i==0 else '<', val)
+                subsel.append(selstr)
+                params.append(year)
+            rangesel.append('(' + ' AND '.join(subsel) + ')')
+    
+        sel= ' OR '.join(rangesel)
+        #~ yield str(selectbase + sel + '\n')
+        #~ yield str(params) + '\n'
+        
+        cursor.execute(str(selectbase + sel), params)
+        icon= timeRanges[rangestring]['icon']
+        for row in cursor.fetchall():
+            yield( str(poilinebase + '\t%s\n' % icon) % row )
+    
+    #~ cursor.execute(selectbase, params)
+    #~ for row in cursor.fetchall():
+        #~ yield( str(poilinebase + '\t%s\n' % iconUnverified) % row )
+
+    #~ if 'unverified' in veri:
+        #~ for rows in (rowsUnverifiedBegin, rowsUnverifiedEnd):
+            #~ for row in rows:
+                #~ yield( str(poilinebase + '\t%s\n' % iconUnverified) % row )
+    
+    #~ if 'verified' in veri:
+        #~ for row in rowsVerified:
+            #~ yield( str(poilinebase + '\t%s\n' % iconVerified) % row )
             
-    if 'inverse' in veri:
-        for row in rowsInverse:
-            yield( str(poilinebase + '\t%s\tbar\n' % iconOther) % row )
+    #~ if 'inverse' in veri:
+        #~ for row in rowsInverse:
+            #~ yield( str(poilinebase + '\t%s\n' % iconOther) % row )
             
 
 
@@ -173,7 +210,13 @@ if __name__ == "__main__":
     # enable pretty stack traces
     import cgitb
     cgitb.enable()
-
+    
+    dprint('MAIN')
+    
+    # XXXXX currently, an interpreter is started for each request. 
+    # we are waiting for FCGI or WSGI to work on labs.
+    # related bug: https://bugzilla.wikimedia.org/show_bug.cgi?id=49058
+    
     from flup.server.fcgi_base import FCGI_RESPONDER    # fcgi server
     from flup.server.fcgi import WSGIServer
     WSGIServer(generator_app, minSpare=3, maxSpare=10, maxThreads=20).run()
