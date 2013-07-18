@@ -16,7 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var map, verifiedPOIlayer, unverifiedPOIlayer, nonexistingPOIlayer, selectControl;
+var map, selectControl;
+var POILayers= new Array();
+//~ , verifiedPOIlayer, unverifiedPOIlayer, nonexistingPOIlayer, selectControl;
 var baseUrl= getConfig('POIBase', "../db/pois.py");
 var initialPOIsLoaded= false;
 var selectFeature;
@@ -81,9 +83,11 @@ function parseHashBangArgs(aURL) {
 function findStringInPOItitles(str) {
 	console.log('findStringInPOItitles %s', str);
 	var features= [];
-	if(verifiedPOIlayer.visibility) features= verifiedPOIlayer.features;
-	if(unverifiedPOIlayer.visibility) features= features.concat(unverifiedPOIlayer.features);
-	if(nonexistingPOIlayer.visibility) features= features.concat(nonexistingPOIlayer.features);
+    for(var i= 0; i<POILayers.length; i++)
+        if(POILayers[i].visibility) features.concat(POILayers[i].features);
+	//~ if(verifiedPOIlayer.visibility) features= verifiedPOIlayer.features;
+	//~ if(unverifiedPOIlayer.visibility) features= features.concat(unverifiedPOIlayer.features);
+	//~ if(nonexistingPOIlayer.visibility) features= features.concat(nonexistingPOIlayer.features);
 	var result= [];
 	for(var i= 0; i<features.length; i++) {
 		if(features[i].attributes['title'].toLowerCase().search(str.toLowerCase())!=-1) {
@@ -121,8 +125,8 @@ function poiLoadend(evt) {
 	//document.getElementById("loadstatus").innerHTML= "&nbsp;";
 	setLoadingState(false);
 	
-	if(!initialPOIsLoaded && verifiedPOIlayer.getDataExtent()!=null) {
-		map.zoomToExtent(verifiedPOIlayer.getDataExtent());
+	if(!initialPOIsLoaded && POILayers[0].getDataExtent()!=null) {
+		map.zoomToExtent(POILayers[0].getDataExtent());
 		initialPOIsLoaded= true;
 	}
 	
@@ -150,6 +154,16 @@ function createPOILayer(title) {
 }
 
 function setPOILayerYear(year) {
+    var layerConfig= getConfig('POILayers', '');
+    for(var i= 0; i<POILayers.length; i++) {
+        POILayers[i].protocol= new OpenLayers.Protocol.HTTP({
+                url: baseUrl + '?ranges=' + layerConfig[i].ranges + '&year=' + year,
+                format: new OpenLayers.Format.Text()
+            });
+        POILayers[i].refresh({force:true});
+        POILayers[i].redraw();
+    }
+/*
 	verifiedPOIlayer.protocol= new OpenLayers.Protocol.HTTP({
 			url: baseUrl + '?ranges=verified&year=' + year,
 			format: new OpenLayers.Format.Text()
@@ -170,6 +184,7 @@ function setPOILayerYear(year) {
 		});
 	nonexistingPOIlayer.refresh({force:true});
 	nonexistingPOIlayer.redraw();
+*/
 	
 	if(document.getElementById("year-display")) document.getElementById("year-display").innerHTML= year; 
 	timerCurrYear= year;
@@ -249,13 +264,20 @@ function init(){
 	map.addLayer(wms);
 */
 
-	verifiedPOIlayer= createPOILayer("<img src='../img/kastell-icon-turm-stilisiert-mithakerl.png' style='margin: 4px;' align='right'> Befestigungsanlagen (Daten gesichert)");
-	unverifiedPOIlayer= createPOILayer("<img src='../img/kastell-icon-turm-stilisiert.png' style='margin: 4px;' align='right'> Befestigungsanlagen (ungesichert/gesch&auml;tzt)");
-	nonexistingPOIlayer= createPOILayer("<img src='../img/kastell-icon-turm-stilisiert-mitx.png' style='margin: 4px;' align='right'> Befestigungsanlagen (in diesem Jahr nicht existierend)");
-	nonexistingPOIlayer.setVisibility(false);
-	
+	//~ verifiedPOIlayer= createPOILayer("<img src='../img/icon-turm-haekchen.png' style='margin: 4px;' align='right'> Befestigungsanlagen (Daten gesichert)");
+	//~ unverifiedPOIlayer= createPOILayer("<img src='../img/icon-turm-transp.png' style='margin: 4px;' align='right'> Befestigungsanlagen (ungesichert/gesch&auml;tzt)");
+	//~ nonexistingPOIlayer= createPOILayer("<img src='../img/icon-turm-kreuz.png' style='margin: 4px;' align='right'> Befestigungsanlagen (in diesem Jahr nicht existierend)");
+	//~ nonexistingPOIlayer.setVisibility(false);
+    
+    var layerConfig= getConfig('POILayers', '');
+	for(var i= 0; i<layerConfig.length; i++) {
+        var layer= createPOILayer(layerConfig[i].title);
+        layer.setVisibility(layerConfig[i].visible);
+        POILayers.push(layer);
+    }
+    
 	// Interaction stuff
-	selectControl = new OpenLayers.Control.SelectFeature([verifiedPOIlayer, unverifiedPOIlayer, nonexistingPOIlayer]);
+	selectControl = new OpenLayers.Control.SelectFeature(POILayers);
 	map.addControl(selectControl);
 	selectControl.activate();
 
@@ -408,10 +430,16 @@ function timerChangeSpeed(relSpeed) {
 
 function zoomToFeature(featureID) {
 	console.log("zoomToFeature('%s')", featureID);
+/*
 	var feature= verifiedPOIlayer.getFeatureById(featureID);
 	if(feature==null) feature= unverifiedPOIlayer.getFeatureById(featureID);
 	if(feature==null) feature= nonexistingPOIlayer.getFeatureById(featureID);
 	if(feature==null) return;
+*/
+    var feature= null;
+    for(var i= 0; i<POILayers.length && feature==null; i++)
+        feature= POILayers[i].getFeatureById(featureID);
+    if(feature==null) return;
 	console.log("feature found: " + feature);
 	selectFeature.select(feature);
 }
