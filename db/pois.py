@@ -123,23 +123,6 @@ def generator_app(environ, start_response):
     bbox= getParam(params, 'bbox', '-1000,-1000,1000,1000').split(',')
     ranges= getParam(params, 'ranges', 'verified,unverified').split(',')
     
-    #~ # verified: things which definately existed that year
-    #~ if 'verified' in veri:
-        #~ cursor.execute(selectbase + "beginnsicher != -10000 AND beginnsicher <= %s AND endemoeglich != -10000 AND endemoeglich > %s", (year, year))
-        #~ rowsVerified= cursor.fetchall()
-    
-    #~ # unverified: things which possibly existed that year
-    #~ if 'unverified' in veri:
-        #~ cursor.execute(selectbase + "beginnmoeglich <= %s AND beginnsicher > %s", (year, year))
-        #~ rowsUnverifiedBegin= cursor.fetchall()
-        #~ cursor.execute(selectbase + "endemoeglich <= %s AND endesicher > %s",  (year, year))
-        #~ rowsUnverifiedEnd= cursor.fetchall()
-
-    #~ # inverse: things which definately did not exist that year
-    #~ if 'inverse' in veri:
-        #~ cursor.execute(selectbase + "beginnmoeglich > %s OR endesicher < %s", (year, year))
-        #~ rowsInverse= cursor.fetchall()
-
     iconVerified= getConfig('iconVerified', '../img/icon-turm-haekchen.png')
     iconUnverified= getConfig('iconUnverified', '../img/icon-turm-transp.png')
     iconOther= getConfig('iconOther', '../img/icon-turm-kreuz.png')
@@ -179,30 +162,12 @@ Geo %(lat)s, %(lon)s<br>%(kastelltyp)s<br>Provinz %(provinz)s<br>%(limesabschnit
             rangesel.append('(' + ' AND '.join(subsel) + ')')
     
         sel= ' OR '.join(rangesel)
-        #~ yield str(selectbase + sel + '\n')
-        #~ yield str(params) + '\n'
-        
+
         cursor.execute(str(selectbase + sel), params)
         icon= timeRanges[rangestring]['icon']
         for row in cursor.fetchall():
             yield( str(poilinebase + '\t%s\n' % icon) % row )
     
-    #~ cursor.execute(selectbase, params)
-    #~ for row in cursor.fetchall():
-        #~ yield( str(poilinebase + '\t%s\n' % iconUnverified) % row )
-
-    #~ if 'unverified' in veri:
-        #~ for rows in (rowsUnverifiedBegin, rowsUnverifiedEnd):
-            #~ for row in rows:
-                #~ yield( str(poilinebase + '\t%s\n' % iconUnverified) % row )
-    
-    #~ if 'verified' in veri:
-        #~ for row in rowsVerified:
-            #~ yield( str(poilinebase + '\t%s\n' % iconVerified) % row )
-            
-    #~ if 'inverse' in veri:
-        #~ for row in rowsInverse:
-            #~ yield( str(poilinebase + '\t%s\n' % iconOther) % row )
             
 
 
