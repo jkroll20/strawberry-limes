@@ -51,6 +51,27 @@ function parseHashBangArgs(aURL) {
     return vars;
 }
 
+// from http://stackoverflow.com/questions/5796718/html-entity-decode
+var decodeEntities = (function() {
+  // this prevents any overhead from creating the object each time
+  var element = document.createElement('div');
+
+  function decodeHTMLEntities (str) {
+    if(str && typeof str === 'string') {
+      // strip script/html tags
+      str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
+      str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '');
+      element.innerHTML = str;
+      str = element.textContent;
+      element.textContent = '';
+    }
+
+    return str;
+  }
+
+  return decodeHTMLEntities;
+})();
+
 
 // returns list of features with 'str' in title
 // todo: this searches the complete HTML title, so e.g. '<a href=' 
@@ -58,11 +79,12 @@ function parseHashBangArgs(aURL) {
 function findStringInPOItitles(str) {
 	console.log('findStringInPOItitles %s', str);
 	var features= [];
-    for(var i= 0; i<POILayers.length; i++)
-        if(POILayers[i].visibility) features.concat(POILayers[i].features);
+    for(var i= 0; i<POILayers.length; i++) {
+        if(POILayers[i].visibility) features= features.concat(POILayers[i].features);
+    }
 	var result= [];
 	for(var i= 0; i<features.length; i++) {
-		if(features[i].attributes['title'].toLowerCase().search(str.toLowerCase())!=-1) {
+		if(decodeEntities(features[i].attributes['title']).toLowerCase().search(str.toLowerCase())!=-1) {
 			result.push(features[i]);
 		}
 	}
@@ -88,16 +110,24 @@ function poiLoadstart(evt) {
 	//~ }
 }
 
+var focusFeature= null;
 function poiLoadend(evt) {
 	//document.getElementById("loadstatus").innerHTML= "&nbsp;";
 	setLoadingState(false);
 	
 	if(!initialPOIsLoaded && POILayers[0].getDataExtent()!=null) {
-		map.zoomToExtent(POILayers[0].getDataExtent());
 		initialPOIsLoaded= true;
+        if(focusFeature) {
+            //~ window.alert("selecting " + focusFeature);
+            console.log (map.zoom);
+            zoomToFeature(focusFeature, true, 13);
+            //~ map.zoomToScale(100, true);
+        }
+        else {
+            map.zoomToExtent(POILayers[0].getDataExtent());
+        }
 	}
-	
-	searchtextChanged();
+    searchtextChanged();
 }
 
 function createPOILayer(title) {
@@ -221,21 +251,26 @@ function init(){
 	map.addControl(selectControl);
 	selectControl.activate();
 
+    applyConfig(config);
+    updateSpeedDisplay();
+
     var args= parseHashBangArgs();
-    if(args.test !== undefined) {
-        // XXXX have hashbang args...
-        //~ setPOILayerYear(50);
-        //~ timelineSetYear(50);
-        //~ map.zoomToMaxExtent();
-        //~ alert("arg test: " + args.test);
+    if(args.wpembed !== undefined) 
+    {
+        focusFeature= unescape(args.focus).replace('_', ' ');
+        var req= new XMLHttpRequest();
+        var str= baseUrl + "?getfocusyearforobject=" + args.focus + "&range=verified";
+        console.log(str);
+        req.open("GET", str, false);
+        req.send();
+        response= JSON.parse(req.responseText);
+        setPOILayerYear(response.focusyear);
+        map.zoomTo(0);
     }
     else {
         setPOILayerYear(timelineInitialYear);
         map.zoomToMaxExtent();
     }
-
-    applyConfig(config);
-    updateSpeedDisplay();
 }
 
 function getConfig(name, defaultValue) {
@@ -365,14 +400,32 @@ function timerChangeSpeed(relSpeed) {
 	else updateSpeedDisplay();
 }
 
-function zoomToFeature(featureID) {
-	console.log("zoomToFeature('%s')", featureID);
+function zoomToFeature(title, recenter= false, zoom= null) {
+	console.log("zoomToFeature('%s')", title);
     var feature= null;
-    for(var i= 0; i<POILayers.length && feature==null; i++)
-        feature= POILayers[i].getFeatureById(featureID);
+    var features= findStringInPOItitles(title);
+    if(features.length!=0) feature= features[0];
+    else {
+        for(var i= 0; i<POILayers.length && feature==null; i++) {
+            feature= POILayers[i].getFeatureById(title);
+        }
+    }
     if(feature==null) return;
 	console.log("feature found: " + feature);
 	selectFeature.select(feature);
+    if(recenter) {
+        //~ var output = '';
+        //~ for (property in feature) {
+          //~ output += property + ': ' + feature[property]+'; \n';
+        //~ }
+        //~ console.log(output);
+        center= feature.geometry.getBounds().centerLonLat;
+        //~ if(zoom)
+            //~ map.zoomTo(zoom);
+        if(zoom)
+            map.zoomTo(zoom);
+        map.panTo(center);
+    }
 }
 
 function searchtextChanged() {

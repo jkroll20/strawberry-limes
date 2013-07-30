@@ -13,7 +13,7 @@ config= {
 		[ "blubb", 1975 ],
 		[ '<a href="http://asdf.com/">asdf</a> etc', 1985 ],
 	],
-    "POIBase": "../db/pois.py",
+    "POIBase": "//../db/pois.py",
     "POILayers": [
         {
             "title": "<img src='../img/icon-turm-haekchen.png' style='margin: 4px;' align='right'> Befestigungsanlagen (Daten gesichert)",

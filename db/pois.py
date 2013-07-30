@@ -22,6 +22,7 @@ import MySQLdb
 import MySQLdb.cursors 
 import sqlite3
 import json
+import urllib
 
 config= json.load(file('config.json'))
 
@@ -29,6 +30,7 @@ def getConfig(name, default):
     return config[name] if name in config else default
 
 DATADIR= getConfig('dataDir', '/data/project/render-tests/erdbeer/data')
+sqlTableName= getConfig('sqlTableName', "limes")
 
 def MakeTimestamp(unixtime= None):
     if unixtime==None: unixtime= time.time()
@@ -73,7 +75,6 @@ def getDbCursor():
     
     if not 'conn' in globals():
         dbname= getConfig('sqlDbName', "rendertests")
-        tblname= getConfig('sqlTableName', "limes")
         default_file= os.path.expanduser(getConfig('sqlDefaultFile', '~/.my.cnf'))
         dprint('creating new sql connection')
         conn= MySQLdb.connect( read_default_file=default_file, use_unicode=False, cursorclass=MySQLdb.cursors.DictCursor )
@@ -105,24 +106,28 @@ def generator_app(environ, start_response):
     start_response('200 OK', [('Content-Type', 'text/plain; charset=utf-8')])
     
     conn, cursor= getDbCursor()
-#"""CREATE TABLE %s (
-#lemma VARBINARY(255),                           \
-#limesabschnitt VARBINARY(255),                  \
-#beginnmoeglich VARBINARY(20), beginnsicher VARBINARY(20),   \
-#endemoeglich VARBINARY(20), endesicher VARBINARY(20),       \
-#zeitraumtext VARBINARY(20),                     \
-#kastelltyp VARBINARY(20),                       \
-#lat DOUBLE,                                     \
-#lon DOUBLE,                                     \
-#provinz VARBINARY(20),                          \
-#projekt VARBINARY(20),                          \
-#bearbeiternotiz VARBINARY(20))""" % tblname
     
     params= parseCGIargs(environ)
+    
+    getfocusyearforobject= getParam(params, 'getfocusyearforobject', None)
     year= getParam(params, 'year', 200)
     bbox= getParam(params, 'bbox', '-1000,-1000,1000,1000').split(',')
     ranges= getParam(params, 'ranges', 'verified,unverified').split(',')
-    
+    timeRanges= getConfig('timeRanges', {})
+    invalidFieldVal= -10000
+
+    if getfocusyearforobject:
+        getfocusyearforobject= urllib.unquote(getfocusyearforobject)
+        r= getParam(params, 'range', '')
+        timerange= timeRanges[r]['ranges'][0]
+        #~ yield str(timerange)
+        sqlstr= 'SELECT (year1 + year2) / 2 AS focusyear FROM ( SELECT AVG(%s) AS year1, AVG(%s) AS year2 FROM %s WHERE lemma=%%s AND %s!=%d AND %s!=%d ) temp' % (timerange[0],timerange[1], sqlTableName, timerange[0],invalidFieldVal, timerange[1],invalidFieldVal)
+        cursor.execute(sqlstr, (getfocusyearforobject.replace('_', ' ')))
+        result= cursor.fetchall()
+        fyear= int(result[0]['focusyear']) if result[0]['focusyear'] else 123;
+        yield str( json.dumps( {'focusyear': fyear} ) )
+        return
+        
     iconVerified= getConfig('iconVerified', '../img/icon-turm-haekchen.png')
     iconUnverified= getConfig('iconUnverified', '../img/icon-turm-transp.png')
     iconOther= getConfig('iconOther', '../img/icon-turm-kreuz.png')
@@ -138,13 +143,7 @@ Geo %(lat)s, %(lon)s<br>%(kastelltyp)s<br>Provinz %(provinz)s<br>%(limesabschnit
 
     yield('point	title	description	iconSize	iconOffset	icon\n')
     
-    selectbase= "SELECT lat,lon, lemma, kastelltyp, zeitraumtext, provinz, limesabschnitt, projekt FROM limes WHERE\n\t " #lat >= %s AND lat <= %s AND "
-    timeRanges= getConfig('timeRanges', {
-        "verified":     [ [ "beginnsicher", "endemoeglich" ] ],
-        "unverified":   [ [ "beginnmoeglich", "beginnsicher" ], [ "endemoeglich", "endesicher" ]  ],
-        "inverse":      [ [ -10000, "beginnmoeglich" ], [ "endesicher", 10000 ]  ]
-    })
-    invalidFieldVal= -10000
+    selectbase= "SELECT lat,lon, lemma, kastelltyp, zeitraumtext, provinz, limesabschnitt, projekt FROM %s WHERE\n\t " % sqlTableName #lat >= %s AND lat <= %s AND "
     for rangestring in ranges:
         rangesel= []
         params= []
@@ -166,6 +165,9 @@ Geo %(lat)s, %(lon)s<br>%(kastelltyp)s<br>Provinz %(provinz)s<br>%(limesabschnit
         cursor.execute(str(selectbase + sel), params)
         icon= timeRanges[rangestring]['icon']
         for row in cursor.fetchall():
+            for stuff in row:
+                if isinstance(row[stuff], (str, unicode)):
+                    row[stuff]= row[stuff].decode('utf-8').encode('ascii', 'xmlcharrefreplace')
             yield( str(poilinebase + '\t%s\n' % icon) % row )
     
             

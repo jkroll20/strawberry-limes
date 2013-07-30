@@ -6,9 +6,13 @@ import csv
 import MySQLdb
 import MySQLdb.cursors 
 
-dbname= "rendertests";
-tblname= "limes";
+config= json.load(file('config.json'))
 
+def getConfig(name, default):
+    return config[name] if name in config else default
+
+dbname= getConfig("sqlDbName", "rendertests")
+tblname= getConfig("sqlTableName", "limes")
 
 def single_degminsec2n(deg, min, sec, NW):
     v= float(re.sub(",", ".", str(sec)))/3600.0 + float(re.sub(",", ".", str(min)))/60.0 + float(str(deg))

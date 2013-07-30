@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var barY= 70;
+var barY= 60;
 var eventXScale= getConfig('timelineScaling', 2);
 var minYear= getConfig('timelineMinYear', -50);
 var maxYear= getConfig('timelineMaxYear', 565);
