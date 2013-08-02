@@ -5,8 +5,9 @@ import re
 import csv
 import MySQLdb
 import MySQLdb.cursors 
+import json
 
-config= json.load(file('config.json'))
+config= json.load(file('../db/config.json'))
 
 def getConfig(name, default):
     return config[name] if name in config else default
@@ -49,7 +50,7 @@ def textfield_to_int(s):
         return -10000
 
 def preptext4db(s):
-    return re.sub('\n', '<br>', s)
+    return re.sub('\n', '<br>', str(s))
 
 def process_row(row, cursor):
     # numbering removed
@@ -83,7 +84,7 @@ def process_row(row, cursor):
         # print("years missing '%s' '%s'" % (row[3], row[6]))
         return False
 
-    #if(textfield_to_int(row[4])==-10000): row[4]= 10000
+    if(textfield_to_int(row[4])==-10000): row[4]= 10000
     
     cursor.execute("SELECT * FROM limes WHERE lemma = %s AND beginnmoeglich = %s AND endemoeglich = %s AND beginnsicher = %s AND endesicher = %s AND kastelltyp = %s", \
         (preptext4db(row[0]), preptext4db(row[3]), preptext4db(row[5]), preptext4db(row[4]), preptext4db(row[6]), preptext4db(row[8])))
