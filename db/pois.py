@@ -135,7 +135,7 @@ def generator_app(environ, start_response):
     poilinebase= str( '\t'.join( [ 
         '%(lat)s,%(lon)s', 
         getConfig("popupTitle", '<a href="http://%(projekt)s/wiki/%(lemma)s" target="pedia">%(lemma)s</a>'),
-        getConfig("popupDescription", """<div style="max-width: 400px;">\
+        getConfig("popupDescription", """<div style="max-width: 250px;">\
 Geo %(lat)s, %(lon)s<br>%(kastelltyp)s<br>Provinz %(provinz)s<br>%(limesabschnitt)s<br>%(zeitraumtext)s\
 </div>"""),
         '16,16', #~ getConfig("iconSize"...

@@ -120,7 +120,7 @@ function poiLoadend(evt) {
         if(focusFeature) {
             //~ window.alert("selecting " + focusFeature);
             console.log (map.zoom);
-            zoomToFeature(focusFeature, true, 13);
+            zoomToFeature(focusFeature, true, 6);
             //~ map.zoomToScale(100, true);
         }
         else {
@@ -400,7 +400,7 @@ function timerChangeSpeed(relSpeed) {
 	else updateSpeedDisplay();
 }
 
-function zoomToFeature(title, recenter= false, zoom= null) {
+function zoomToFeature(title, recenter, zoom) {
 	console.log("zoomToFeature('%s')", title);
     var feature= null;
     var features= findStringInPOItitles(title);
@@ -414,16 +414,11 @@ function zoomToFeature(title, recenter= false, zoom= null) {
 	console.log("feature found: " + feature);
 	selectFeature.select(feature);
     if(recenter) {
-        //~ var output = '';
-        //~ for (property in feature) {
-          //~ output += property + ': ' + feature[property]+'; \n';
-        //~ }
-        //~ console.log(output);
         center= feature.geometry.getBounds().centerLonLat;
-        //~ if(zoom)
-            //~ map.zoomTo(zoom);
         if(zoom)
-            map.zoomTo(zoom);
+            //~ map.zoomTo(zoom);
+            //~ map.adjustZoom(zoom);
+            map.setCenter(null, zoom, null, null);
         map.panTo(center);
     }
 }
@@ -495,7 +490,7 @@ function showDlg(contentHTML) {
 
 function showAboutDlg() {
 	showDlg(
-		'<div style="width: 780px; height: 290px; text-align: center; padding: 10px">' +
+		'<div style="width: \"100%\"; height: 290px; text-align: center; padding: 3px">' +
 		'<div class="aboutdlgheader">Interaktive Karte R&ouml;mischer Befestigungsanlagen</div>' +
 		'<div style="text-align: left; padding-left: 50px; padding-right: 50px; padding-top: 10px; padding-bottom: 20px">' +
 		'<br>' +
