@@ -153,14 +153,18 @@ Geo %(lat)s, %(lon)s<br>%(kastelltyp)s<br>Provinz %(provinz)s<br>%(limesabschnit
                 val= subrange[i]
                 selstr= ''
                 if not isinstance(val, (int, long)):
-                    selstr= "%%s != '%d' AND " % invalidFieldVal
-                    params.append(str(val))
+                    #~ selstr= "%%s != '%d' AND " % invalidFieldVal
+                    #~ params.append(str(val))
+                    selstr= "%s != '%d' AND " % (str(val), invalidFieldVal)
                 selstr+= "%%s %s %s" % ('>=' if i==0 else '<', val)
                 subsel.append(selstr)
                 params.append(year)
             rangesel.append('(' + ' AND '.join(subsel) + ')')
     
         sel= ' OR '.join(rangesel)
+        
+        #~ yield str(selectbase + sel + '\n')
+        #~ yield str(params) + '\n'
 
         cursor.execute(str(selectbase + sel), params)
         icon= timeRanges[rangestring]['icon']

@@ -84,7 +84,7 @@ def process_row(row, cursor):
         # print("years missing '%s' '%s'" % (row[3], row[6]))
         return False
 
-    if(textfield_to_int(row[4])==-10000): row[4]= 10000
+    #~ if(textfield_to_int(row[4])==-10000): row[4]= 10000
     
     cursor.execute("SELECT * FROM limes WHERE lemma = %s AND beginnmoeglich = %s AND endemoeglich = %s AND beginnsicher = %s AND endesicher = %s AND kastelltyp = %s", \
         (preptext4db(row[0]), preptext4db(row[3]), preptext4db(row[5]), preptext4db(row[4]), preptext4db(row[6]), preptext4db(row[8])))

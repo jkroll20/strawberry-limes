@@ -490,7 +490,7 @@ function showDlg(contentHTML) {
 
 function showAboutDlg() {
 	showDlg(
-		'<div style="width: \"100%\"; height: 290px; text-align: center; padding: 3px">' +
+		'<div style="width: \"80%\"; height: 280px; text-align: center; padding: 3px">' +
 		'<div class="aboutdlgheader">Interaktive Karte R&ouml;mischer Befestigungsanlagen</div>' +
 		'<div style="text-align: left; padding-left: 50px; padding-right: 50px; padding-top: 10px; padding-bottom: 20px">' +
 		'<br>' +
