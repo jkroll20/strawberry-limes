@@ -3,6 +3,7 @@
 import os, sys
 import re
 import csv
+import subprocess
 import MySQLdb
 import MySQLdb.cursors 
 import json
@@ -153,14 +154,18 @@ def getDbCursor():
 if __name__ == '__main__':
     inputfilename= 'gi.csv'
     if len(sys.argv)>1: inputfilename= sys.argv[1]
+    print('opening input file %s' % inputfilename)
+    rows= 0
     valid_rows= 0
     conn, cursor= getDbCursor()
     cursor.execute('DELETE FROM %s' % tblname)
     with open(inputfilename) as csvfile:
-        reader= csv.reader(csvfile)
+        reader= csv.reader(csvfile, delimiter=',')
         for row in reader:
+            rows+= 1
             if process_row(row, cursor): valid_rows+= 1
     conn.commit()
+    print("rows processed: %d" % rows)
     print("valid rows: %d" % valid_rows)
     cursor.execute('SELECT COUNT(*) FROM %s' % tblname)
     print('rows in DB: %s' % cursor.fetchone()['COUNT(*)'])

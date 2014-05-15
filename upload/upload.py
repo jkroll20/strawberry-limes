@@ -58,10 +58,12 @@ def generator_app(environ, start_response):
     
     for line in csv.file:
         outputfile.write(line)
+    outputfile.close()
     
     yield '<pre>\n'
     try:
-        output= subprocess.check_output( '../db/import-csv.py %s' % outfilename, shell=True, stderr=subprocess.STDOUT )
+        cmd= '../db/import-csv.py %s' % outfilename
+        output= subprocess.check_output( cmd, shell=True, stderr=subprocess.STDOUT )
         yield output
         yield '\n\nImport OK.\n'
     except subprocess.CalledProcessError as ex:
