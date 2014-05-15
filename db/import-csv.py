@@ -97,7 +97,7 @@ def process_row(row, cursor):
         print ""
 
     try:
-        cursor.execute("REPLACE INTO limes VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+        cursor.execute("REPLACE INTO " + tblname+'_tmp' +  " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
             #(re.sub(' ', '_', preptext4db(row[0])), 
             (preptext4db(row[0]),
             preptext4db(row[2]), textfield_to_int(row[3]), textfield_to_int(row[4]), textfield_to_int(row[5]), textfield_to_int(row[6]), \
@@ -127,10 +127,10 @@ def getDbCursor():
         cursor.execute("USE %s" % dbname)
     
     try:
-        cursor.execute("DESCRIBE %s" % tblname)
+        cursor.execute("DESCRIBE %s_tmp" % tblname)
     except MySQLdb.ProgrammingError as e:
         #LEMMA  LIMESABSCHNITT  BEGINN MÖGLICH  BEGINN SICHER   ENDE MÖGLICH    ENDE SICHER ZEITRAUM TEXT   KASTELLTYP  KOORDINATEN PROVINZ PROJEKT BEARBEITER/OK
-        cursor.execute("""CREATE TABLE %s (
+        cursor.execute("""CREATE TABLE %s_tmp (
                             lemma VARBINARY(255),                           \
                             limesabschnitt VARBINARY(255),                  \
                             beginnmoeglich INT, beginnsicher INT,           \
@@ -151,6 +151,10 @@ def getDbCursor():
                             #UNIQUE KEY (lemma, beginnmoeglich,endemoeglich, beginnsicher,endesicher, kastelltyp),
     return conn, cursor
 
+def move_table(cursor, fromtable, totable):
+    cursor.execute('DROP TABLE IF EXISTS %s' % totable)
+    cursor.execute('RENAME TABLE %s TO %s' % (fromtable, totable))
+
 if __name__ == '__main__':
     inputfilename= 'gi.csv'
     if len(sys.argv)>1: inputfilename= sys.argv[1]
@@ -158,12 +162,13 @@ if __name__ == '__main__':
     rows= 0
     valid_rows= 0
     conn, cursor= getDbCursor()
-    cursor.execute('DELETE FROM %s' % tblname)
+    cursor.execute('DELETE FROM %s' % tblname + '_tmp')
     with open(inputfilename) as csvfile:
         reader= csv.reader(csvfile, delimiter=',')
         for row in reader:
             rows+= 1
             if process_row(row, cursor): valid_rows+= 1
+    if valid_rows: move_table(cursor, tblname + '_tmp', tblname)
     conn.commit()
     print("rows processed: %d" % rows)
     print("valid rows: %d" % valid_rows)
