@@ -77,7 +77,7 @@ def getDbCursor():
         dbname= getConfig('sqlDbName', "rendertests")
         default_file= os.path.expanduser(getConfig('sqlDefaultFile', '~/.my.cnf'))
         dprint('creating new sql connection')
-        conn= MySQLdb.connect( read_default_file=default_file, use_unicode=False, cursorclass=MySQLdb.cursors.DictCursor )
+        conn= MySQLdb.connect( read_default_file=default_file, use_unicode=False, cursorclass=MySQLdb.cursors.DictCursor, host='tools-db' )
         cursor= conn.cursor()
         cursor.execute("USE %s" % dbname)
     else:

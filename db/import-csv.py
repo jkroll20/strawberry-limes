@@ -87,7 +87,7 @@ def process_row(row, cursor):
 
     #~ if(textfield_to_int(row[4])==-10000): row[4]= 10000
     
-    cursor.execute("SELECT * FROM limes WHERE lemma = %s AND beginnmoeglich = %s AND endemoeglich = %s AND beginnsicher = %s AND endesicher = %s AND kastelltyp = %s", \
+    cursor.execute("SELECT * FROM " + tblname+'_tmp' + " WHERE lemma = %s AND beginnmoeglich = %s AND endemoeglich = %s AND beginnsicher = %s AND endesicher = %s AND kastelltyp = %s", \
         (preptext4db(row[0]), preptext4db(row[3]), preptext4db(row[5]), preptext4db(row[4]), preptext4db(row[6]), preptext4db(row[8])))
     result= cursor.fetchone()
     if result!=None:
