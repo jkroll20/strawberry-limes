@@ -190,7 +190,7 @@ if __name__ == "__main__":
     
     from flup.server.fcgi_base import FCGI_RESPONDER    # fcgi server
     from flup.server.fcgi import WSGIServer
-    WSGIServer(generator_app, minSpare=1, maxSpare=3, maxThreads=5).run()
+    WSGIServer(generator_app, minSpare=0, maxSpare=1, maxThreads=2).run()
 
     #~ from flup.server.cgi import WSGIServer   # basic, slow cgi server
     #~ WSGIServer(generator_app).run()
